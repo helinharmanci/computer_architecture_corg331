@@ -1,0 +1,188 @@
+#/* $begin abscopy-ys */#
+##################################################################
+# abscopy.ys - copy the absolute values of a src block of n words to dst.
+# Return the sum of copied (absolute) values.
+#
+# Include your name and ID here.
+# Helin Ayça Harmancı - 2448470
+# Describe how and why you modified the baseline code.
+
+#Our src array can be size at max 64, therefore I unroll the loop in terms of 8 and 4. My aim #was to reeduce the cycles proportional to logn. I also implemented isubq operation to get rid #of te cycles i wasted by using irmovq  
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = n
+abscopy:
+##################################################################
+# You can modify this portion
+	# Loop header
+
+	xorq %rax,%rax		# sum = 0;
+	isubq $0,%rdx         # n <= 0?
+	jle Done               # if so, goto Done:
+	
+	rrmovq %rdi, %rbx
+	rrmovq %rsi, %rcx
+	jmp n_greater_8_test
+	
+        
+n_greater_8:
+	
+	mrmovq (%rbx), %r8	
+	mrmovq $8(%rbx), %r9
+	mrmovq $16(%rbx), %r10
+	mrmovq $24(%rbx), %r11
+	mrmovq $32(%rbx), %r12 #srcnin 5. elemanına kadar kopyalıyorum
+
+	xorq %r13, %r13
+	subq %r8, %r13 	#negate hali
+	cmovg %r13, %r8
+	
+	rmmovq %r8, (%rcx)
+	addq %r8, %rax
+
+	xorq %r13, %r13
+	subq %r9, %r13 	#negate hali
+	cmovg %r13, %r9	#sıfırdan büyükse raxa ekle
+	rmmovq %r9, 8(%rcx)
+	addq %r9, %rax
+
+	xorq %r13, %r13
+	subq %r10, %r13 	#negate hali
+	cmovg %r13, %r10	#sıfırdan büyükse raxa ekle
+	rmmovq %r10, 16(%rcx)
+	addq %r10, %rax
+
+	xorq %r13, %r13
+	subq %r11, %r13 	#negate hali
+	cmovg %r13, %r11	#sıfırdan büyükse raxa ekle
+	rmmovq %r11, 24(%rcx)
+	addq %r11, %rax
+
+	xorq %r13, %r13
+	subq %r12, %r13 	#negate hali
+	cmovg %r13, %r12	#sıfırdan büyükse raxa ekle
+	rmmovq %r12, 32(%rcx)  #dst'ye dört elemanı kopyaladım
+	addq %r12, %rax
+
+	mrmovq 40(%rbx), %rbp
+	mrmovq 48(%rbx), %r14
+	mrmovq 56(%rbx), %r10
+
+	xorq %r13, %r13
+	subq %rbp, %r13 	#negate hali
+	cmovg %r13, %rbp	#sıfırdan büyükse raxa ekle
+	rmmovq %rbp, 40(%rcx)
+	addq %rbp, %rax
+
+	xorq %r13, %r13
+	subq %r14, %r13 	#negate hali
+	cmovg %r13, %r14	#sıfırdan büyükse raxa ekle
+	rmmovq %r14, 48(%rcx)
+	addq %r14, %rax
+
+	xorq %r13, %r13
+	subq %r10, %r13 	#negate hali
+	cmovg %r13, %r10	#sıfırdan büyükse raxa ekle
+	rmmovq %r10, 56(%rcx) #dst'ye 8. elemana kopyaladım
+	addq %r10, %rax
+
+	isubq $64, %rbx
+	isubq $64, %rcx
+	isubq $-8, %rdx
+	
+n_greater_8_test: 
+	
+	isubq $0, %rdx
+	jle Done
+	
+	rrmovq %rdx,%r13	#n'i kopyaladım
+	isubq $-8 ,%r13	#n-8
+	jg n_greater_8  
+	
+
+n_less_8:	#8 den küçük olduğunu biliyorum, 4 ten küçük mü diye bakmam lazım
+
+	isubq $0, %rdx
+	jle Done
+	
+	rrmovq %rdx,%r13	#n'i kopyaladım
+	
+	isubq $-4, %r13	#n-4
+	jle loop		#4tenküçükse loopa sokucam
+	
+	
+n_greater_4:
+	
+	mrmovq (%rbx), %r8	
+	mrmovq 8(%rbx), %r9
+	mrmovq 16(%rbx), %r10
+	mrmovq 24(%rbx), %r11
+
+	xorq %r13, %r13
+	subq %r8, %r13 	#negate hali
+	cmovg %r13, %r8	#sıfırdan büyükse raxa ekle
+	rmmovq %r8, (%rcx)
+	addq %r8, %rax
+	
+	xorq %r13, %r13
+	subq %r9, %r13 	#negate hali
+	cmovg %r13, %r9	#sıfırdan büyükse raxa ekle
+	addq %r9, %rax
+	rmmovq %r9, 8(%rcx)
+
+	xorq %r13, %r13
+	subq %r10, %r13 	#negate hali
+	cmovg %r13, %r10	#sıfırdan büyükse raxa ekle
+	addq %r10, %rax
+	rmmovq %r10, 16(%rcx)
+	
+
+	xorq %r13, %r13
+	subq %r11, %r13 	#negate hali
+	cmovg %r13, %r11	#sıfırdan büyükse raxa ekle
+	addq %r11, %rax
+	rmmovq %r11, 24(%rcx)
+	
+	isubq $32, %rbx
+	isubq $32, %rcx
+	isubq $-4, %rdx	#n-4=1 #rdximde yeni n var
+	
+	isubq $0, %rdx
+	jle Done	#0<=n ise artık işim bitti
+	
+	#n sıfırdan büyük
+	rrmovq %rdx, %r10
+	isubq $-4, %r10	
+	jg n_greater_4
+	
+
+loop:
+	isubq $0,%rdx         # n <= 0?
+	je Done
+	xorq %r8, %r8
+	mrmovq (%rbx), %r8
+	
+	xorq %r13, %r13
+	subq %r8, %r13 	#negate hali
+	cmovg %r13, %r8	#sıfırdan büyükse raxa ekle
+	rmmovq %r8, (%rcx)
+	addq %r8, %rax
+	
+	isubq $8, %rbx
+	isubq $8, %rcx
+   
+test:
+	isubq $-1, %rdx
+	jle Done
+	jmp loop
+
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+        ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end abscopy-ys */

@@ -1,0 +1,92 @@
+#Helin Ayça Harmancı - 2448470
+.pos 0
+	irmovq Stack, %rsp  	# Set up stack pointer
+	irmovq head, %rdi	#put the linkedlist to rdi
+	irmovq array,%rsi
+	irmovq $56, %rdx
+	call insert_ll		# Execute kth_ll program
+	halt			# Terminate program 
+
+.pos 0x200
+head:
+	.quad 0x0005
+	.quad ele1
+ele1:
+	.quad 0x000c
+	.quad ele2
+ele2:
+	.quad 0x0010
+	.quad ele3
+ele3:
+	.quad 0x001a
+	.quad ele4
+ele4:
+	.quad 0x0030
+	.quad ele5
+ele5:
+	.quad 0x0045
+	.quad ele6
+ele6:
+	.quad 0x005e
+	.quad 0 # Remember that 0 is null.
+	
+.pos 0x400
+array:
+	.quad 0
+	.quad 0
+
+
+insert_ll:
+	
+	rmmovq %rdx, (%rsi)	#*array=value
+	andq %rdi, %rdi  	#head_null mı?
+	je empty_ll
+	mrmovq (%rdi), %r8 	#r8'e head attım
+	subq %rdx, %r8 	#head->value - value  ?=0
+	jg empty_ll
+	rrmovq %rdi, %r14
+	jmp test
+
+
+empty_ll:
+
+	rmmovq %rdi, 8(%rsi)	#headin valuesunu r8un gösterdiği yere attım
+	jmp return_array
+
+loop:
+	mrmovq 8(%r14), %r14	#temp=temp->next
+
+test:
+	mrmovq 8(%r14), %r10 	#temp=r10
+	mrmovq (%r10), %r12	#r10 tempin nextini tutyor
+	andq %r10, %r10	#tempin nexti null mı
+	je insert
+	rrmovq %r12, %r13	#r13'te tempin nextinin valuesu var
+	subq %rdx, %r13 	#r13-value yapıyorum 0dan kücükse loopa atlayacak
+	jle loop
+	jmp insert
+
+insert:
+
+	xorq %r11, %r11
+	mrmovq 8(%r14), %r11	#r11 tempin nexti demek
+	rmmovq %r11, 8(%rsi)
+	rmmovq %rsi, 8(%r14)
+	rmmovq %rsi, 8(%r14) 	#tempin next=array
+	jmp return_head
+
+
+return_array:
+	rrmovq %rsi, %rax
+	ret
+
+return_head:
+	rrmovq %rdi, %rax
+	ret
+	
+	
+
+# Stack starts here and grows to lower addresses
+.pos 0x800
+Stack:
+
